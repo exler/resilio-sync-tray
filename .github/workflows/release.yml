@@ -1,0 +1,42 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+    contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install Poetry
+      run: pip install poetry
+
+    - name: Install Dependencies
+      run: poetry install --with=dev
+
+    - name: Build Application
+      run: poetry run bash ./scripts/build.sh
+
+    - name: Extract version and rename asset
+      run: |
+        VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\///')
+        mv ./dist/resilio_sync_tray ./dist/resilio_sync_tray_$VERSION
+        echo "RELEASE_ASSET=./dist/resilio_sync_tray_$VERSION" >> $GITHUB_ENV
+
+    - name: Create and Upload Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ${{ env.RELEASE_ASSET }}
