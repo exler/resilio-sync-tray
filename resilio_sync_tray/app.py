@@ -1,3 +1,4 @@
+import os.path
 import subprocess
 import sys
 from typing import Self
@@ -11,8 +12,14 @@ class TrayApp:
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
 
+        # Determine if running as a script or bundled executable
+        if getattr(sys, "frozen", False):
+            self.base_dir = sys._MEIPASS
+        else:
+            self.base_dir = os.path.dirname(__file__)
+
         self.tray = QSystemTrayIcon()
-        self.tray.setIcon(QIcon("resilio_sync_tray/resources/resilio-sync-icon.png"))
+        self.tray.setIcon(QIcon(os.path.join(self.base_dir, "resilio-sync-icon.png")))
         self.tray.setVisible(True)
 
         self.menu = QMenu()
@@ -35,7 +42,7 @@ class TrayApp:
         self.tray.setContextMenu(self.menu)
 
     def get_status(self: Self) -> bool:
-        return subprocess.getoutput("systemctl is-active resilio-sync")
+        return subprocess.getoutput("systemctl --user is-active resilio-sync")
 
     def get_toggle_text(self: Self) -> str:
         return "Start Resilio Sync" if self.get_status() == "inactive" else "Stop Resilio Sync"
@@ -47,9 +54,9 @@ class TrayApp:
     def toggle_resilio(self: Self) -> None:
         status = self.get_status()
         if status == "active":
-            subprocess.run(["sudo", "systemctl", "--user", "stop", "resilio-sync"])
+            subprocess.run(["systemctl", "--user", "stop", "resilio-sync"])
         else:
-            subprocess.run(["sudo", "systemctl", "--user", "start", "resilio-sync"])
+            subprocess.run(["systemctl", "--user", "start", "resilio-sync"])
         self.update_menu()
 
     def run(self: Self) -> None:
