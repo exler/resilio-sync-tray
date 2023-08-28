@@ -21,22 +21,19 @@ jobs:
       with:
         python-version: '3.x'
 
+    - name: Install system dependencies
+      run: sudo apt-get install '^libxcb.*-dev' libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-dev libxkbcommon-x11-dev
+
     - name: Install Poetry
       run: pip install poetry
 
-    - name: Install Dependencies
+    - name: Install Python dependencies
       run: poetry install --with=dev
 
-    - name: Build Application
+    - name: Build application
       run: poetry run bash ./scripts/build.sh
 
-    - name: Extract version and rename asset
-      run: |
-        VERSION=$(echo $GITHUB_REF | sed 's/refs\/tags\///')
-        mv ./dist/resilio_sync_tray ./dist/resilio_sync_tray_$VERSION
-        echo "RELEASE_ASSET=./dist/resilio_sync_tray_$VERSION" >> $GITHUB_ENV
-
-    - name: Create and Upload Release
+    - name: Create and upload release
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ env.RELEASE_ASSET }}
+        files: ./dist/resilio_sync_tray
